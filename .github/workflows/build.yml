@@ -16,10 +16,6 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y build-essential bc kmod cpio flex bison libssl-dev libelf-dev clang lld llvm git wget crossbuild-essential-arm64
 
-    - name: Clone Official Clang Toolchain
-      run: |
-        git clone --depth=1 https://github.com/YuuNoa/prebuilts_clang_host_linux-x86_clang-r450784d.git $GITHUB_WORKSPACE/clang
-
     - name: Inject Wireless Drivers
       run: |
         cat <<EOF >> arch/arm64/configs/gki_defconfig
@@ -54,7 +50,6 @@ jobs:
 
     - name: Build GKI Kernel
       run: |
-        export PATH=$GITHUB_WORKSPACE/clang/bin:$PATH
         make ARCH=arm64 gki_defconfig
         make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang LLVM=1 -j$(nproc)
 
