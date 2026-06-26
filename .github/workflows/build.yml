@@ -1,6 +1,7 @@
 name: Build Kernel
 on:
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,7 +18,48 @@ jobs:
 
     - name: Clone Official Clang Toolchain
       run: |
-        # سحب الـ Clang المتوافق بالملي عبر الـ Git المباشر والسريع
         git clone --depth=1 https://github.com/YuuNoa/prebuilts_clang_host_linux-x86_clang-r450784d.git $GITHUB_WORKSPACE/clang
 
-    - name:
+    - name: Inject Wireless Drivers
+      run: |
+        cat <<EOF >> arch/arm64/configs/gki_defconfig
+        CONFIG_WIRELESS=y
+        CONFIG_CFG80211=y
+        CONFIG_MAC80211=y
+        CONFIG_CFG80211_WEXT=y
+        CONFIG_MAC80211_LEDS=y
+        CONFIG_NETDEVICES=y
+        CONFIG_WLAN=y
+        CONFIG_ATH_COMMON=y
+        CONFIG_ATH_CARDS=y
+        CONFIG_ATH9K_HW=y
+        CONFIG_ATH9K_COMMON=y
+        CONFIG_ATH9K_BTCOEX_SUPPORT=y
+        CONFIG_ATH9K=y
+        CONFIG_ATH9K_PCI=y
+        CONFIG_ATH9K_AHB=y
+        CONFIG_ATH9K_DEBUGFS=y
+        CONFIG_ATH9K_STATION=y
+        CONFIG_ATH9K_HTC=y
+        CONFIG_ATH9K_HTC_DEBUGFS=y
+        CONFIG_USB_NET_RNDIS_WLAN=y
+        CONFIG_WLAN_VENDOR_REALTEK=y
+        CONFIG_RTL_CARDS=y
+        CONFIG_RTL8192CU=y
+        CONFIG_RTL8XXXU=y
+        CONFIG_RTL8XXXU_UNTESTED=y
+        EOF
+        sed -i 's/bcmp(/memcmp(/g' scripts/kconfig/confdata.c
+        sed -i '229d' drivers/Kconfig
+
+    - name: Build GKI Kernel
+      run: |
+        export PATH=$GITHUB_WORKSPACE/clang/bin:$PATH
+        make ARCH=arm64 gki_defconfig
+        make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang LLVM=1 -j$(nproc)
+
+    - name: Upload Kernel Output
+      uses: actions/upload-artifact@v4
+      with:
+        name: GKI-Kernel-Sky
+        path: arch/arm64/boot/Image
