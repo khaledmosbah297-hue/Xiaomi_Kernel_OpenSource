@@ -44,6 +44,8 @@ jobs:
         CONFIG_RTL8192CU=y
         CONFIG_RTL8XXXU=y
         CONFIG_RTL8XXXU_UNTESTED=y
+        # السطر ده هو اللي هيوقف تعسف الكومبايلر
+        CONFIG_WERROR=n
         EOF
         sed -i 's/bcmp(/memcmp(/g' scripts/kconfig/confdata.c
         sed -i '229d' drivers/Kconfig
@@ -51,8 +53,7 @@ jobs:
     - name: Build GKI Kernel
       run: |
         make ARCH=arm64 gki_defconfig
-        # إضافة صارمة للـ KCFLAGS عشان نتخطى أي Warning مهما كان
-        make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang LLVM=1 KCFLAGS="-Wno-error -Wno-unused-command-line-argument" -j$(nproc)
+        make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang LLVM=1 -j$(nproc)
 
     - name: Upload Kernel Output
       uses: actions/upload-artifact@v4
