@@ -19,11 +19,8 @@ jobs:
       run: |
         mkdir -p $GITHUB_WORKSPACE/clang
         cd $GITHUB_WORKSPACE/clang
-        # تحميل النسخة المضمونة والشغالة
         wget https://github.com/YuuNoa/prebuilts_clang_host_linux-x86_clang-r450784d/archive/refs/heads/master.tar.gz
-        tar -xf master.tar.gz
-        # نقل الملفات للمسار الصحيح بعد الفك
-        mv prebuilts_clang_host_linux-x86_clang-r450784d-master/* .
+        tar -xf master.tar.gz --strip-components=1
 
     - name: Drivers
       run: |
