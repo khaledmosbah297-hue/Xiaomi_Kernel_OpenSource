@@ -1,32 +1,29 @@
-name: Build GKI Kernel with Wireless Drivers
-
+name: Build Kernel
 on:
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout Kernel Source
-      uses: actions/checkout@v3
+    - name: Clone
+      uses: actions/checkout@v4
       with:
         ref: sky-t-oss
 
-    - name: Set up Build Environment
+    - name: Env
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential bc kmod cpio flex bison libssl-dev libelf-dev clang lld llvm git
 
-    - name: Download Google Official Clang Toolchain
+    - name: Toolchain
       run: |
         mkdir -p $GITHUB_WORKSPACE/clang
         cd $GITHUB_WORKSPACE/clang
         wget https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r450784d.tar.gz
         tar -xf clang-r450784d.tar.gz
 
-    - name: Inject Drivers and Patch Source
+    - name: Drivers
       run: |
-        # Inject Atheros and Realtek drivers into gki_defconfig
         cat <<EOF >> arch/arm64/configs/gki_defconfig
         CONFIG_WIRELESS=y
         CONFIG_CFG80211=y
@@ -54,19 +51,17 @@ jobs:
         CONFIG_RTL8XXXU=y
         CONFIG_RTL8XXXU_UNTESTED=y
         EOF
-
-        # Fix Xiaomi source code bugs
         sed -i 's/bcmp(/memcmp(/g' scripts/kconfig/confdata.c
         sed -i '229d' drivers/Kconfig
 
-    - name: Build Kernel
+    - name: Compile
       run: |
         export PATH=$GITHUB_WORKSPACE/clang/bin:$PATH
         make ARCH=arm64 gki_defconfig
         make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC=clang LLVM=1 -j$(nproc)
 
-    - name: Upload Kernel Output
-      uses: actions/upload-artifact@v3
+    - name: Upload
+      uses: actions/upload-artifact@v4
       with:
         name: GKI-Kernel-Sky
         path: arch/arm64/boot/Image
